@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
+#include "CommonTests.hpp"
 #include "component/GameComponent.hpp"
 
 TEST(GameComponentTest, IncrementsInstancesOnInstantiationAndUsesItForID) {
@@ -16,18 +17,4 @@ TEST(GameComponentTest, IncrementsInstancesOnInstantiationAndUsesItForID) {
     delete gameComponent2;
 }
 
-TEST(GameComponentTest, LogsIdAndTimestampWhenUpdateIsCalled) {
-    GameComponent gameComponent;
-    std::chrono::time_point<std::chrono::system_clock> epochTime;
-
-//  TODO: Consider timezones
-    testing::internal::CaptureStdout();
-    gameComponent.update(epochTime);
-    std::string output = testing::internal::GetCapturedStdout();
-    EXPECT_THAT(output, testing::MatchesRegex("ID: [0-9] Updated @ 01:00:00\n"));
-
-    testing::internal::CaptureStdout();
-    gameComponent.update(epochTime+std::chrono::minutes(45));
-    output = testing::internal::GetCapturedStdout();
-    EXPECT_THAT(output, testing::MatchesRegex("ID: [0-9] Updated @ 01:45:00\n"));
-}
+TEST_UPDATE_FUNCTION_LOGS_ID_AND_TIMESTAMP(GameComponentTest, GameComponent)
