@@ -63,14 +63,15 @@ TEST(DrawableGameComponentTest, LogsTheNewPositionAndCurrentDirectionWhenUpdateI
 }
 
 TEST(DrawableGameComponentTest, ChangesDirectionWhenUpdateIsCalled) {
+//    TODO: This test is not the cleanest, technically we should inject the random number provider dependency
+//          so it can be mocked however to do so would be massively deviating from the contract defined in the task
+//          assignment.
     DrawableGameComponent drawableGameComponent(0, 0);
-
-    auto startingDirection = DrawableGameComponent::Right;
-
-    drawableGameComponent.setDirection(startingDirection);
-    drawableGameComponent.update(std::chrono::system_clock::now());
-
-    ASSERT_NE(drawableGameComponent.getDirection(), startingDirection);
+    for (int i = 0; i < 10000; ++i) {
+        auto previousDirection = drawableGameComponent.getDirection();
+        drawableGameComponent.update(std::chrono::system_clock::now());
+        ASSERT_NE(drawableGameComponent.getDirection(), previousDirection);
+    }
 }
 
 TEST(DrawableGameComponentTest, ReturnsStringForProvidedDirectionWhenGetDirectionNameIsCalled) {

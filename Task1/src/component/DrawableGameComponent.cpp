@@ -1,6 +1,9 @@
+#include <random>
 #include <iostream>
+#include <array>
 
 #include "component/DrawableGameComponent.hpp"
+#include "util/random.hpp"
 
 DrawableGameComponent::DrawableGameComponent(int x, int y) : x(x), y(y) {
 
@@ -37,14 +40,46 @@ void DrawableGameComponent::draw() {
     std::cout << getDirectionName(direction) << ": X:" << x << " Y:" << y << std::endl;
 }
 
+//static const std::array<DrawableGameComponent::Direction, 4> allDirections = {
+//        DrawableGameComponent::Left,
+//        DrawableGameComponent::Right,
+//        DrawableGameComponent::Up,
+//        DrawableGameComponent::Down
+//};
+
+// TODO: Decide on implementation style
 void DrawableGameComponent::changeDirection() {
-    // generate random number N 0...MAX_FIELDS-1
-    // cast N -> newDirection: Direction
+//    State Machine Style
+    switch (direction) {
+        case Left:
+            direction = chooseRandomState<Direction, Right, Up, Down>();
+            break;
+        case Right:
+            direction = chooseRandomState<Direction, Left, Up, Down>();
+            break;
+        case Up:
+            direction = chooseRandomState<Direction, Left, Right, Down>();
+            break;
+        case Down:
+            direction = chooseRandomState<Direction, Left, Right, Up>();
+            break;
+    }
 
-    // if newDirection >= currentDirection
-    //      newDirection++;
-
-    // currentDirection = newDirection;
+//    Random Choice Style
+//    std::array<Direction, allDirections.size()-1> validDirections = {};
+//    int index = 0;
+//    for (auto possibleDirection: allDirections) {
+//        if(direction == possibleDirection) continue;
+//        validDirections[index] = possibleDirection;
+//        index++;
+//    }
+//
+//    std::random_device randomDevice;
+//    std::default_random_engine randomEngine(randomDevice());
+//    std::uniform_int_distribution<int> intDistribution(0, validDirections.size()-1);
+//
+//    const auto newDirectionIndex = intDistribution(randomEngine);
+//    direction = validDirections[newDirectionIndex];
 }
 
 void DrawableGameComponent::setDirection(DrawableGameComponent::Direction newDirection) {
@@ -62,7 +97,6 @@ int DrawableGameComponent::getY() const {
 DrawableGameComponent::Direction DrawableGameComponent::getDirection() const {
     return direction;
 }
-
 
 std::string DrawableGameComponent::getDirectionName(DrawableGameComponent::Direction direction) {
     switch (direction) {
