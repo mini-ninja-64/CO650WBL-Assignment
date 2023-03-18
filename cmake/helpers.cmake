@@ -27,7 +27,7 @@ function(setupExecutableModule name)
     target_include_directories("${TEST_EXECUTABLE}" PRIVATE "include")
 
     target_compile_options(${PROJECT_EXECUTABLE} PRIVATE -Wall -Wextra -Wpedantic -Werror)
-    target_compile_options(${TEST_EXECUTABLE} PRIVATE -DTESTING)
+    target_compile_options(${TEST_EXECUTABLE} PRIVATE -DTESTING -Wall -Wextra -Wpedantic -Werror)
 
     target_link_libraries("${TEST_EXECUTABLE}" gtest_main gmock)
     include(GoogleTest)

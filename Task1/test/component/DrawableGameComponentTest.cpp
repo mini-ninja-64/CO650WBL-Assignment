@@ -22,7 +22,7 @@ TEST(DrawableGameComponentTest, UsesTheConstructorPositionAsItsInitialPlacementA
             std::make_tuple(50, 25)
     };
 
-    for (const auto [x, y]: args) {
+    for (const auto& [x, y]: args) {
         DrawableGameComponent gameComponent(x, y);
 
         ASSERT_EQ(gameComponent.getX(), x);

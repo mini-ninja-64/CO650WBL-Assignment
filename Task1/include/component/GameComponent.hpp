@@ -11,6 +11,8 @@ private:
 public:
     GameComponent();
     GameComponent(const GameComponent&) = delete;
+    virtual ~GameComponent() = default;
+
     /**
      * Update a game component, causing it to log out to stdout its id and the time at which it was updated.
      *
