@@ -2,9 +2,15 @@
 
 #include "component/DrawableGameComponent.hpp"
 
-DrawableGameComponent::DrawableGameComponent(int x, int y) : x(x), y(y) {
-
-}
+DrawableGameComponent::DrawableGameComponent(int x, int y):
+    x(x),
+    y(y),
+    randomEngine(
+            std::chrono::duration_cast<std::chrono::seconds>(
+                    std::chrono::system_clock::now().time_since_epoch()
+            ).count()
+    ),
+    randomDistribution(0, NUMBER_OF_DIRECTIONS - 1 - 1) {}
 
 void DrawableGameComponent::update(const std::chrono::time_point<std::chrono::system_clock> &timePoint) {
     GameComponent::update(timePoint);
@@ -38,13 +44,11 @@ void DrawableGameComponent::draw() {
 }
 
 void DrawableGameComponent::changeDirection() {
-    // generate random number N 0...MAX_FIELDS-1
-    // cast N -> newDirection: Direction
+    int newDirectionIndex = randomDistribution(randomEngine);
 
-    // if newDirection >= currentDirection
-    //      newDirection++;
+    if (newDirectionIndex >= direction) newDirectionIndex++;
 
-    // currentDirection = newDirection;
+    direction = static_cast<Direction>(newDirectionIndex);
 }
 
 void DrawableGameComponent::setDirection(DrawableGameComponent::Direction newDirection) {

@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <string>
+#include <random>
 
 #include "GameComponent.hpp"
 
@@ -10,6 +11,7 @@ public:
     DrawableGameComponent(int x, int y);
     DrawableGameComponent(const DrawableGameComponent&) = delete;
 
+#define NUMBER_OF_DIRECTIONS 4
     enum Direction {
         Left,
         Right,
@@ -51,6 +53,9 @@ private:
 
 //    TODO: Should be atomic for thread safety
     Direction direction = Right;
+
+    std::default_random_engine randomEngine;
+    std::uniform_int_distribution<int>  randomDistribution;
 
     /**
      * Assign a random direction to the direction data member which differs from the objects current direction
