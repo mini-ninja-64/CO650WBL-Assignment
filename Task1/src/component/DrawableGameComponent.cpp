@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "component/DrawableGameComponent.hpp"
+#include "util/random.hpp"
 
 DrawableGameComponent::DrawableGameComponent(int x, int y):
     x(x),
@@ -44,6 +45,21 @@ void DrawableGameComponent::draw() {
 }
 
 void DrawableGameComponent::changeDirection() {
+//    State Machine Style
+//    switch (direction) {
+//        case Left:
+//            direction = chooseRandomState<Direction, Right, Up, Down>();
+//            break;
+//        case Right:
+//            direction = chooseRandomState<Direction, Left, Up, Down>();
+//            break;
+//        case Up:
+//            direction = chooseRandomState<Direction, Left, Right, Down>();
+//            break;
+//        case Down:
+//            direction = chooseRandomState<Direction, Left, Right, Up>();
+//            break;
+//    }
     int newDirectionIndex = randomDirectionDistribution(randomEngine);
 
     if (newDirectionIndex >= direction) newDirectionIndex++;
