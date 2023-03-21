@@ -10,7 +10,7 @@ DrawableGameComponent::DrawableGameComponent(int x, int y):
                     std::chrono::system_clock::now().time_since_epoch()
             ).count()
     ),
-    randomDistribution(0, NUMBER_OF_DIRECTIONS - 1 - 1) {}
+    randomDirectionDistribution(0, NUMBER_OF_DIRECTIONS - 1 - 1) {}
 
 void DrawableGameComponent::update(const std::chrono::time_point<std::chrono::system_clock> &timePoint) {
     GameComponent::update(timePoint);
@@ -44,7 +44,7 @@ void DrawableGameComponent::draw() {
 }
 
 void DrawableGameComponent::changeDirection() {
-    int newDirectionIndex = randomDistribution(randomEngine);
+    int newDirectionIndex = randomDirectionDistribution(randomEngine);
 
     if (newDirectionIndex >= direction) newDirectionIndex++;
 
@@ -66,7 +66,6 @@ int DrawableGameComponent::getY() const {
 DrawableGameComponent::Direction DrawableGameComponent::getDirection() const {
     return direction;
 }
-
 
 std::string DrawableGameComponent::getDirectionName(DrawableGameComponent::Direction direction) {
     switch (direction) {

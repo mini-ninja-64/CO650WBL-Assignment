@@ -55,7 +55,7 @@ private:
     Direction direction = Right;
 
     std::default_random_engine randomEngine;
-    std::uniform_int_distribution<int>  randomDistribution;
+    std::uniform_int_distribution<int> randomDirectionDistribution;
 
     /**
      * Assign a random direction to the direction data member which differs from the objects current direction
