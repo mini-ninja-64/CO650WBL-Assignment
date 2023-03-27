@@ -4,6 +4,7 @@
 #include "component/GameComponent.hpp"
 #include "component/DrawableGameComponent.hpp"
 
+#ifndef TESTING
 static void initialiseFunction() {
     std::cout << "Initialising game" << std::endl;
 }
@@ -12,7 +13,6 @@ static void terminateFunction() {
     std::cout << "Terminating game" << std::endl;
 }
 
-#ifndef TESTING
 int main() {
     Game* const game = new Game(5);
 

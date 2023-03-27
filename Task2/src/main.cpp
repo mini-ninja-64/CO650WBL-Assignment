@@ -5,6 +5,8 @@
 #include "communication/Server.hpp"
 #include "communication/Client.hpp"
 
+#ifndef TESTING
+
 #define SERVER_PORT 3000
 
 #ifdef SERVER
@@ -40,7 +42,6 @@ static void inputHandlerThreadFunction(std::atomic<bool>& inputHandlerRunning, c
     }
 }
 
-#ifndef TESTING
 int main() {
     std::unique_ptr<Comms> comms;
 
