@@ -47,11 +47,9 @@ private:
     const int SCREEN_WIDTH = 80;
     const int SCREEN_HEIGHT = 20;
 
-//    TODO: Should be atomic for thread safety
     int x;
     int y;
 
-//    TODO: Should be atomic for thread safety
     Direction direction = Right;
 
     std::default_random_engine randomEngine;

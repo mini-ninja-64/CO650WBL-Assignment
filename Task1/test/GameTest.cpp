@@ -71,39 +71,53 @@ TEST(GameTest, ShouldThrowErrorWhenMaxComponentsHasBeenReached) {
     MockGameComponent mockGameComponent1, mockGameComponent2;
 
     game.add(&mockGameComponent1);
-    game.add(&mockGameComponent2);
-
-//    TODO: Finish test
+    EXPECT_THROW({
+        game.add(&mockGameComponent2);
+    }, std::length_error);
 }
 
 TEST(GameTest, ShouldThrowErrorWhenANullpointerIsAdded) {
     Game game(5);
-    game.add(nullptr);
+    EXPECT_THROW({
+        game.add(nullptr);
+    }, std::invalid_argument);
 
-//    TODO: Finish test
 }
 
+static int mockInvocations = 0;
+static void mockFunction() {
+    mockInvocations++;
+}
 
-// TODO: Find out how much leeway I can take with the contracts defined in the assignment brief
-//TEST(GameTest, CallsInitialiseFunctionPointerWhenRunIsCalled) {
-//    Game game(5);
-//
-//    testing::MockFunction<void(void)> mockFunction;
-//
-//    game.setInitialise(mockFunction.AsStdFunction());
-//
-//    game.run();
-//
-//    EXPECT_CALL(mockFunction, Call());
-//}
+TEST(GameTest, CallsInitialiseFunctionPointerWhenRunIsCalled) {
+    Game game(5);
 
-//TEST(GameTest, CallsTerminateFunctionPointerWhenRunIsCalled) {
-//    Game game(5);
-//
-//    testing::MockFunction<void(void)> mockFunction;
-//    game.setTerminate(mockFunction);
-//
-//    game.run();
-//
-//    EXPECT_CALL(initialiseFunctionPointer, Call()).Times(1);
-//}
+    game.setInitialise(mockFunction);
+
+    int startValue = mockInvocations;
+
+    game.run();
+    EXPECT_EQ(mockInvocations, startValue+1);
+}
+
+TEST(GameTest, CallsTerminateFunctionPointerWhenRunIsCalled) {
+    Game game(5);
+
+    game.setTerminate(mockFunction);
+
+    int startValue = mockInvocations;
+
+    game.run();
+    EXPECT_EQ(mockInvocations, startValue+1);
+}
+
+TEST(GameTest, DoesNotThrowAnExceptionWhenFunctionPointersAreNull) {
+    Game game(5);
+
+    game.setInitialise(nullptr);
+    game.setTerminate(nullptr);
+
+    EXPECT_NO_THROW({
+        game.run();
+    });
+}

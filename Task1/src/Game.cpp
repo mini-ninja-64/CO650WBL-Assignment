@@ -14,14 +14,10 @@ Game::~Game() {
 
 void Game::add(GameComponent* gameComponent) {
     if(gameComponent == nullptr) {
-//        TODO: Throw error?
-        std::cerr << "A nullptr cannot be added to the Game instance" << std::endl;
-        return;
+        throw std::invalid_argument("A nullptr cannot be added to the Game instance");
     }
     if(componentCount >= maximumComponentCount) {
-//        TODO: Throw error?
-        std::cerr << "GameComponent cannot be added due to the Game instance being full" << std::endl;
-        return;
+        throw std::length_error("The GameComponent cannot be added due to the Game instance being full");
     }
 
     components[componentCount] = gameComponent;
