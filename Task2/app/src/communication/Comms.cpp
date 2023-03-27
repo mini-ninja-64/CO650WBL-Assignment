@@ -1,4 +1,15 @@
 #include "communication/Comms.hpp"
 
-Comms::Comms(int port) : port(port) {}
+#include <utility>
 
+Comms::Comms(int port, MessageHandler messageHandler):
+    port(port),
+    messageHandler(std::move(messageHandler)) {}
+
+int Comms::getPort() const {
+    return port;
+}
+
+const MessageHandler &Comms::getMessageHandler() const {
+    return messageHandler;
+}

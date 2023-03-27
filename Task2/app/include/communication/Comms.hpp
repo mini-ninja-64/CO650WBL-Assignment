@@ -3,14 +3,27 @@
 #include <span>
 #include <functional>
 
-#include "protocol/v1/PacketV1.hpp"
+#include "protocol/Packet.hpp"
+
+#define POLL_TIMEOUT_MS 1000
+
+class Comms;
+typedef std::function<void(const std::unique_ptr<Packet>&)> MessageHandler;
 
 class Comms {
 public:
-    explicit Comms(int port);
+    Comms(int port, MessageHandler messageHandler);
+    virtual ~Comms() = default;
 
-    virtual void sendMessage() = 0;
+    virtual void sendPacket(std::unique_ptr<Packet> packet) = 0;
+    virtual void start() = 0;
+    virtual void stop() = 0;
+
+    [[nodiscard]] virtual bool isRunning() const = 0;
+
+    [[nodiscard]] int getPort() const;
+    [[nodiscard]] const MessageHandler &getMessageHandler() const;
 private:
-    int port;
-    std::function<void(const Comms&, PacketV1)> messageHandler;
+    const int port;
+    const MessageHandler messageHandler;
 };

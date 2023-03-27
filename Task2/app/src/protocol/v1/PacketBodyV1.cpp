@@ -15,6 +15,10 @@ AsciiPacketBodyV1::AsciiPacketBodyV1(std::span<uint8_t> bodyData):
     PacketBodyV1(ASCII),
     bodyData(bodyData.begin(), bodyData.end()) {}
 
+AsciiPacketBodyV1::AsciiPacketBodyV1(const std::string &bodyString):
+        PacketBodyV1(ASCII),
+        bodyData(bodyString.begin(), bodyString.end()) {}
+
 std::vector<uint8_t> AsciiPacketBodyV1::getBytes() {
     std::vector<uint8_t> bodyBytes = {ASCII, UINT32_TO_UINT8(bodyData.size())};
 

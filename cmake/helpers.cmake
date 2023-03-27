@@ -33,27 +33,3 @@ function(setupExecutableModule name)
     include(GoogleTest)
     gtest_discover_tests("${TEST_EXECUTABLE}")
 endfunction()
-
-function(setupLibraryModule name)
-    project("${name}")
-    set(PROJECT_LIBRARY "${PROJECT_NAME}")
-    set(TEST_EXECUTABLE "${PROJECT_NAME}-test")
-
-    file(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS "src/*.cpp")
-    file(GLOB_RECURSE TEST_FILES CONFIGURE_DEPENDS "test/*.cpp")
-
-    add_library("${PROJECT_LIBRARY}" STATIC ${SOURCE_FILES})
-    add_executable("${TEST_EXECUTABLE}" ${SOURCE_FILES} ${TEST_FILES})
-
-    target_include_directories("${PROJECT_LIBRARY}" INTERFACE "include")
-    target_include_directories("${PROJECT_LIBRARY}" PRIVATE "include")
-    target_include_directories("${TEST_EXECUTABLE}" INTERFACE "include")
-    target_include_directories("${TEST_EXECUTABLE}" PRIVATE "include")
-
-    target_compile_options(${PROJECT_LIBRARY} PRIVATE -Wall -Wextra -Wpedantic -Werror)
-    target_compile_options(${TEST_EXECUTABLE} PRIVATE -DTESTING -Wall -Wextra -Wpedantic -Werror)
-
-    target_link_libraries("${TEST_EXECUTABLE}" gtest_main gmock)
-    include(GoogleTest)
-    gtest_discover_tests("${TEST_EXECUTABLE}")
-endfunction()

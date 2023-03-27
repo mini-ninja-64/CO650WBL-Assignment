@@ -26,6 +26,7 @@ private:
 class AsciiPacketBodyV1: public PacketBodyV1 {
 public:
     explicit AsciiPacketBodyV1(std::span<uint8_t> bodyData);
+    explicit AsciiPacketBodyV1(const std::string& bodyString);
     ~AsciiPacketBodyV1() override = default;
 
     [[nodiscard]] std::vector<uint8_t> getBytes() override;
