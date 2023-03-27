@@ -29,7 +29,7 @@ public:
      *
      * @param time The time the object is updated.
      */
-    void update(const std::chrono::time_point<std::chrono::system_clock> & timePoint) override;
+    void update(const tm* timePoint) override;
 
     void setDirection(Direction newDirection);
 

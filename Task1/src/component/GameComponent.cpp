@@ -10,9 +10,7 @@ int GameComponent::instances = 0;
 GameComponent::GameComponent(): id(++GameComponent::instances) {
 }
 
-void GameComponent::update(const std::chrono::time_point<std::chrono::system_clock>& timePoint) {
-    const auto cTime = std::chrono::system_clock::to_time_t(timePoint);
-    const auto* localTime = std::localtime(&cTime);
+void GameComponent::update(const tm* localTime) {
     std::cout << "ID: " << id << " Updated @ " << std::put_time(localTime, "%H:%M:%S") << std::endl;
 }
 

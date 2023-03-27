@@ -17,8 +17,7 @@ public:
      *
      * @param time a reference to the time at which the object is updated.
      */
-//     TODO: the assignment brief says we should use TM
-    virtual void update(const std::chrono::time_point<std::chrono::system_clock>& timePoint);
+    virtual void update(const tm* timePoint);
 
     [[nodiscard]] static int getInstances();
     [[nodiscard]] int getId() const;

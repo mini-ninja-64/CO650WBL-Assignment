@@ -4,11 +4,12 @@
 #include "component/GameComponent.hpp"
 #include "Game.hpp"
 
-template<typename T>
-auto generateTimePointCaptureFunction(std::vector<T>* vector) {
-    return  [vector](auto timePointReference) mutable {
-        auto timePoint = timePointReference;
-        vector->push_back(timePoint);
+auto generateTimePointCaptureFunction(std::vector<std::chrono::time_point<std::chrono::system_clock>>& vector) {
+    return [vector](const tm* localTimePointer) mutable {
+        tm localTimeCopy = *localTimePointer;
+        const auto cTime = std::mktime(&localTimeCopy);
+
+        vector.push_back(std::chrono::system_clock::from_time_t(cTime));
     };
 }
 
@@ -30,7 +31,7 @@ auto assertPairDistances(auto expectedDistance, auto tolerance, const std::vecto
 
 class MockGameComponent : public GameComponent {
 public:
-    MOCK_METHOD(void, update, (const std::chrono::time_point<std::chrono::system_clock>& timePoint), (override));
+    MOCK_METHOD(void, update, (const tm* timePoint), (override));
 };
 
 TEST(GameTest, CallsUpdateOnEachProvidedGameComponent5TimesWithADelayOf1Second) {
@@ -45,15 +46,15 @@ TEST(GameTest, CallsUpdateOnEachProvidedGameComponent5TimesWithADelayOf1Second) 
 
     EXPECT_CALL(gameComponent1, update(testing::_))
         .Times(5)
-        .WillRepeatedly(generateTimePointCaptureFunction(&timePoints1));
+        .WillRepeatedly(generateTimePointCaptureFunction(timePoints1));
 
     EXPECT_CALL(gameComponent2, update(testing::_))
             .Times(5)
-            .WillRepeatedly(generateTimePointCaptureFunction(&timePoints2));
+            .WillRepeatedly(generateTimePointCaptureFunction(timePoints2));
 
     EXPECT_CALL(gameComponent3, update(testing::_))
             .Times(5)
-            .WillRepeatedly(generateTimePointCaptureFunction(&timePoints3));
+            .WillRepeatedly(generateTimePointCaptureFunction(timePoints3));
 
     game.run();
 

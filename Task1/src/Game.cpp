@@ -31,7 +31,10 @@ void Game::run() {
 
     for (int iteration = 0; iteration < ITERATIONS; iteration++) {
         for (int componentIndex = 0; componentIndex < componentCount; componentIndex++) {
-            components[componentIndex]->update(std::chrono::system_clock::now());
+            auto currentTime = std::chrono::system_clock::now();
+            const auto cTime = std::chrono::system_clock::to_time_t(currentTime);
+            const auto* localTime = std::localtime(&cTime);
+            components[componentIndex]->update(localTime);
         }
 
         const std::chrono::milliseconds sleepDuration(TICK_1000MS);
