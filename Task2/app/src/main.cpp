@@ -7,9 +7,9 @@
 #define SERVER_PORT 3000
 
 #ifdef SERVER
-static const uint16_t PACKET_ID = 0x0000;
+static const uint16_t SENDER_ID = 0x0000;
 #else
-static const uint16_t PACKET_ID = 0xBEEF;
+static const uint16_t SENDER_ID = 0x0001;
 #endif
 
 #ifndef TESTING
@@ -52,7 +52,7 @@ int main() {
             continue;
         }
 
-        auto packetHeader = std::make_unique<PacketHeaderV1>(PACKET_ID);
+        auto packetHeader = std::make_unique<PacketHeaderV1>(SENDER_ID);
         std::unique_ptr<PacketBodyV1> packetBody = nullptr;
         if(userInput == "QUIT") {
             std::cout << "Sending a QUIT packet to suspend the application" << std::endl;
