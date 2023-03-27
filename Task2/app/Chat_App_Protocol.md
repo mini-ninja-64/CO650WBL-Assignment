@@ -16,5 +16,5 @@ The base packet is versioned to make future revisions easier.
 
 Body Types:
 - `0x01` - ASCII Message NULL Terminator is not required & Body Data is a stream of ASCII characters
-- `0x02` - Chat close request
+- `0x02` - Chat app quit request
 

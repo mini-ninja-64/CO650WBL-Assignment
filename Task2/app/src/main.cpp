@@ -1,4 +1,5 @@
 #include <iostream>
+#include <chrono>
 
 #include "protocol/v1/PacketV1.hpp"
 #include "communication/Server.hpp"
@@ -12,11 +13,40 @@ static const uint16_t SENDER_ID = 0x0000;
 static const uint16_t SENDER_ID = 0x0001;
 #endif
 
+static void inputHandlerThreadFunction(std::atomic<bool>& inputHandlerRunning, const std::unique_ptr<Comms>& comms) {
+    while (inputHandlerRunning) {
+        std::string userInput;
+        std::getline(std::cin, userInput);
+
+        if(!comms->isRunning()) {
+            inputHandlerRunning = false;
+            continue;
+        }
+
+        auto packetHeader = std::make_unique<PacketHeaderV1>(SENDER_ID);
+        std::unique_ptr<PacketBodyV1> packetBody = nullptr;
+        if(userInput == "QUIT") {
+            std::cout << "Sending a QUIT packet to suspend the application" << std::endl;
+            packetBody = std::make_unique<QuitPacketBodyV1>();
+            inputHandlerRunning = false;
+        } else {
+            packetBody = std::make_unique<AsciiPacketBodyV1>(userInput);
+        }
+
+        auto packet = std::make_unique<PacketV1>(std::move(packetHeader), std::move(packetBody));
+        comms->sendPacket(std::move(packet));
+
+        if(!inputHandlerRunning) comms->stop();
+    }
+}
+
 #ifndef TESTING
 int main() {
-    std::atomic<bool> appRunning = true;
+    std::unique_ptr<Comms> comms;
 
-    MessageHandler messageHandler = [&appRunning](const auto& packet) mutable {
+    std::atomic<bool> inputHandlerRunning = true;
+
+    MessageHandler messageHandler = [&inputHandlerRunning, &comms](const auto& packet) mutable {
         if(packet->getVersion() == 1) {
             auto packetHeader = dynamic_cast<PacketHeaderV1 *>(packet->getPacketHeader().get());
 
@@ -29,43 +59,22 @@ int main() {
                     break;
                 case PacketBodyV1::QUIT:
                     std::cout << "Received quit request, will shutdown application" << std::endl;
-                    appRunning = false;
+                    inputHandlerRunning = false;
+                    comms->stop();
                     break;
             }
         }
     };
+
 #ifdef SERVER
-    std::unique_ptr<Comms> comms = std::make_unique<Server>(SERVER_PORT, messageHandler);
+    comms = std::make_unique<Server>(SERVER_PORT, messageHandler);
 #else
-    std::unique_ptr<Comms> comms = std::make_unique<Client>("127.0.0.1", SERVER_PORT, messageHandler);
+    comms = std::make_unique<Client>("127.0.0.1", SERVER_PORT, messageHandler);
 #endif
 
-    comms->start();
+    std::thread inputHandlerThread(inputHandlerThreadFunction, std::ref(inputHandlerRunning), std::ref(comms));
 
-
-    while (appRunning) {
-        std::string userInput;
-        std::getline(std::cin, userInput);
-
-        if(!comms->isRunning()) {
-            appRunning = false;
-            continue;
-        }
-
-        auto packetHeader = std::make_unique<PacketHeaderV1>(SENDER_ID);
-        std::unique_ptr<PacketBodyV1> packetBody = nullptr;
-        if(userInput == "QUIT") {
-            std::cout << "Sending a QUIT packet to suspend the application" << std::endl;
-            packetBody = std::make_unique<QuitPacketBodyV1>();
-            appRunning = false;
-        } else {
-            packetBody = std::make_unique<AsciiPacketBodyV1>(userInput);
-        }
-
-        auto packet = std::make_unique<PacketV1>(std::move(packetHeader), std::move(packetBody));
-        comms->sendPacket(std::move(packet));
-    }
-
-    comms->stop();
+    comms->block();
+    if(inputHandlerThread.joinable()) inputHandlerThread.join();
 }
 #endif

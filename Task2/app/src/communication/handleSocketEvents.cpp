@@ -1,15 +1,18 @@
 #include <sstream>
-#include "communication/handleSocketEvent.hpp"
-#include "util/unix.hpp"
+#include <libc.h>
 
-void handleSocketEvent(const pollfd& pollDescriptor,
-                       bool drainPacketQueue,
-                       std::mutex& packetQueueMutex,
-                       std::vector<std::unique_ptr<Packet>>& packetQueue,
-                       const std::function<void(std::unique_ptr<Packet>)>& packetCallback) {
+#include "communication/handleSocketEvents.hpp"
+#include "util/unix.hpp"
+#include "communication/Comms.hpp"
+
+void handleSocketEvents(const pollfd& pollDescriptor,
+                        bool drainPacketQueue,
+                        std::mutex& packetQueueMutex,
+                        std::vector<std::unique_ptr<Packet>>& packetQueue,
+                        const MessageHandler& messageHandler) {
     if(pollDescriptor.revents & POLLHUP || pollDescriptor.revents & POLLERR) {
         std::stringstream errorString;
-        errorString << "Error occurred in connection: " << pollDescriptor.fd << ERROR_LOG;
+        errorString << "Error occurred in connection" << ERROR_LOG;
         throw std::runtime_error(errorString.str());
     }
 
@@ -18,6 +21,7 @@ void handleSocketEvent(const pollfd& pollDescriptor,
         const int READ_CHUNK_SIZE = 1024;
         std::vector<uint8_t> bytes;
 
+        // Read out the available bytes in chunks of 1024;
         ssize_t bytesReadCount;
         do {
             std::array<uint8_t, READ_CHUNK_SIZE> readArray = {0};
@@ -37,7 +41,7 @@ void handleSocketEvent(const pollfd& pollDescriptor,
         }
 
         auto packet = Packet::parsePacket(bytes);
-        packetCallback(std::move(packet));
+        messageHandler(packet);
     }
 
     // The socketDescriptor is ready to send data and the packetQueue contains data

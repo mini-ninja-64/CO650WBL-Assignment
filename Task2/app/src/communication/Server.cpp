@@ -1,12 +1,13 @@
 #include "communication/Server.hpp"
 #include "util/unix.hpp"
-#include "communication/handleSocketEvent.hpp"
+#include "communication/handleSocketEvents.hpp"
 
 #include <utility>
 #include <sys/poll.h>
 #include <iostream>
 #include <sys/fcntl.h>
 #include <sstream>
+#include <libc.h>
 
 static void connectionHandlerThreadFunction(int socketDescriptor,
                                             const bool& running,
@@ -16,6 +17,11 @@ static void connectionHandlerThreadFunction(int socketDescriptor,
         // Blocking wait for events on socket descriptor
         int connectionDescriptor = accept(socketDescriptor, nullptr, nullptr);
         if(connectionDescriptor < 0) {
+            if(errno == ECONNABORTED && !running) {
+                std::cout << "Server socket closed, completing thread" << std::endl;
+                break;
+            }
+
             std::cerr << "Failed to accept inbound connection:" << ERROR_LOG << std::endl;
         } else {
             std::cout << "Registering New connection: " << connectionDescriptor << std::endl;
@@ -29,9 +35,11 @@ static void connectionHandlerThreadFunction(int socketDescriptor,
     }
 }
 
-static void messageHandlerThreadFunction(const bool& running,
-                                         std::mutex& connectionListMutex,
+static void messageHandlerThreadFunction(int serverSocketDescriptor,
+                                         std::thread& connectionHandlerThread,
+                                         bool& running,
                                          std::unordered_set<int>& connectionList,
+                                         std::mutex& connectionListMutex,
                                          std::vector<std::unique_ptr<Packet>>& packetQueue,
                                          std::mutex& packetQueueMutex,
                                          const MessageHandler& messageHandler) {
@@ -59,14 +67,19 @@ static void messageHandlerThreadFunction(const bool& running,
             const bool isFinalDescriptor = pollDescriptorIndex == pollDescriptors.size()-1;
 
             try {
-                handleSocketEvent(pollDescriptor,
-                                  isFinalDescriptor,
-                                  packetQueueMutex,
-                                  packetQueue,
-                                  messageHandler
+                handleSocketEvents(pollDescriptor,
+                                   isFinalDescriptor,
+                                   packetQueueMutex,
+                                   packetQueue,
+                                   messageHandler
                 );
             } catch (const std::exception& exception) {
-                std::cerr << "Exception occurred while handling events: " << exception.what() << std::endl;
+                if(!running) continue; // if not running, any errors are expected as sockets are being closed
+
+                std::cerr << "Exception occurred while handling events, connection " <<
+                    pollDescriptor.fd << " will be closed (exception: " <<
+                    exception.what() << ")" << std::endl;
+
                 closeableConnections.insert(pollDescriptor.fd);
             }
         }
@@ -82,7 +95,7 @@ static void messageHandlerThreadFunction(const bool& running,
             for (const auto &connectionDescriptor: closeableConnections) {
                 std::cout << "Closing connection: " << connectionDescriptor << std::endl;
                 if(close(connectionDescriptor)) {
-                    std::cerr << "Failed to close connection: "
+                    std::cerr << "Failed to stop connection: "
                               << connectionDescriptor
                               << ERROR_LOG
                               << std::endl;
@@ -91,17 +104,20 @@ static void messageHandlerThreadFunction(const bool& running,
         }
     }
 
+    // Force the server socket to close and wait for the connectionHandler thread to finish up
+    if(close(serverSocketDescriptor) < 0) {
+        std::cerr << "Failed to close server socket: " << serverSocketDescriptor << ERROR_LOG << std::endl;
+    }
+    if(connectionHandlerThread.joinable()) connectionHandlerThread.join();
+
+    // Close all connection sockets
     std::lock_guard<std::mutex> connectionListLock(connectionListMutex);
     for (const auto &connectionDescriptor: connectionList) {
         if(close(connectionDescriptor) < 0) {
-            // TODO: log error
+            std::cerr << "Failed to close connection: " << connectionDescriptor << ERROR_LOG << std::endl;
         }
     }
     connectionList.clear();
-
-    if(close(connectionListMutex) < 0) {
-        // TODO: throw error
-    }
 }
 
 Server::Server(int port, MessageHandler messageHandler):
@@ -115,19 +131,7 @@ Server::Server(int port, MessageHandler messageHandler):
                     .s_addr = htonl(INADDR_ANY)
             },
             .sin_zero = {0, 0, 0, 0, 0, 0, 0, 0}
-        }) {}
-
-Server::~Server() {
-    stopThreadAndCloseSocketDescriptor();
-}
-
-void Server::sendPacket(std::unique_ptr<Packet> packet) {
-    std::lock_guard<std::mutex> packetQueueGuard(packetQueueMutex);
-    packetQueue.push_back(std::move(packet));
-}
-
-void Server::start() {
-    //TODO: error handling
+        }) {
     std::lock_guard<std::mutex> runningGuard(runningMutex);
     if(running) return;
 
@@ -148,6 +152,7 @@ void Server::start() {
     if(socketBinding < 0) {
         std::stringstream errorString;
         errorString << "Failed to bind socket to server address" << ERROR_LOG;
+        close(socketDescriptor);
         throw std::runtime_error(errorString.str());
     }
 
@@ -156,6 +161,7 @@ void Server::start() {
     if(socketListening < 0) {
         std::stringstream errorString;
         errorString << "Failed to enable listening on server socket" << ERROR_LOG;
+        close(socketDescriptor);
         throw std::runtime_error(errorString.str());
     }
 
@@ -167,22 +173,53 @@ void Server::start() {
                                           std::ref(connectionList));
 
     messageHandlerThread = std::thread(messageHandlerThreadFunction,
+                                       socketDescriptor,
+                                       std::ref(connectionHandlerThread),
                                        std::ref(running),
-                                       std::ref(connectionListMutex),
                                        std::ref(connectionList),
+                                       std::ref(connectionListMutex),
                                        std::ref(packetQueue),
                                        std::ref(packetQueueMutex),
                                        getMessageHandler());
 }
 
+Server::~Server() {
+    setRunningFalseAndWaitForCompletion();
+}
+
+void Server::sendPacket(std::unique_ptr<Packet> packet) {
+    std::lock_guard<std::mutex> packetQueueGuard(packetQueueMutex);
+    packetQueue.push_back(std::move(packet));
+}
+
 void Server::stop() {
-    std::lock_guard<std::mutex> runningGuard(runningMutex);
+    setRunningFalse();
 }
 
 bool Server::isRunning() const {
     return running;
 }
 
-void Server::stopThreadAndCloseSocketDescriptor() {
-    stop();
+void Server::setRunningFalse() {
+    std::lock_guard<std::mutex> runningGuard(runningMutex);
+
+    // Ensure all outstanding packets have been sent before closing the server
+    while(!packetQueue.empty()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    }
+
+    if(!running) return;
+    running = false;
 }
+
+
+void Server::setRunningFalseAndWaitForCompletion() {
+    setRunningFalse();
+    block();
+}
+
+void Server::block() {
+    if(messageHandlerThread.joinable()) messageHandlerThread.join();
+    if(connectionHandlerThread.joinable()) connectionHandlerThread.join();
+}
+

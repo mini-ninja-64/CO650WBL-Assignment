@@ -1,5 +1,7 @@
 #include "protocol/v1/PacketBodyV1.hpp"
 
+#include <string>
+
 PacketBodyV1::PacketBodyV1(PacketBodyV1::BodyType bodyType): bodyType(bodyType) {}
 
 PacketBodyV1::BodyType PacketBodyV1::getBodyType() const {

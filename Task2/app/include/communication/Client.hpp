@@ -13,8 +13,9 @@ public:
 
     void sendPacket(std::unique_ptr<Packet> packet) override;
 
-    void start() override;
+    void block() override;
     void stop() override;
+
     [[nodiscard]] bool isRunning() const override;
 
 private:
@@ -28,5 +29,6 @@ private:
     bool running = false;
     std::thread messageHandlerThread;
 
-    void stopThreadAndCloseSocketDescriptor();
+    void setRunningFalse();
+    void setRunningFalseAndWaitForCompletion();
 };

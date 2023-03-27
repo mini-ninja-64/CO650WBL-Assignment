@@ -2,6 +2,7 @@
 
 #include <span>
 #include <vector>
+#include <vector>
 #include <cstdlib>
 
 #include "../Packet.hpp"

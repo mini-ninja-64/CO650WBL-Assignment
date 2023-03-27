@@ -5,7 +5,7 @@
 
 #include "protocol/Packet.hpp"
 
-#define POLL_TIMEOUT_MS 1000
+#define POLL_TIMEOUT_MS 250
 
 class Comms;
 typedef std::function<void(const std::unique_ptr<Packet>&)> MessageHandler;
@@ -16,7 +16,7 @@ public:
     virtual ~Comms() = default;
 
     virtual void sendPacket(std::unique_ptr<Packet> packet) = 0;
-    virtual void start() = 0;
+    virtual void block() = 0;
     virtual void stop() = 0;
 
     [[nodiscard]] virtual bool isRunning() const = 0;
